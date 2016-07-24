@@ -1,4 +1,4 @@
 # modrds
 learn redis and  take outt the models
 
-redis-2.8.13
+redis' version is 2.8.13
