@@ -45,6 +45,9 @@ void listRelease(list *list)
  * On error, NULL is returned and no operation is performed (i.e. the
  * list remains unaltered).
  * On success the 'list' pointer you pass to the function is returned. */
+/*
+    在头处添加一个节点
+ */
 list *listAddNodeHead(list *list, void *value)
 {
     listNode *node;
@@ -52,14 +55,14 @@ list *listAddNodeHead(list *list, void *value)
     if ((node = (listNode *)malloc(sizeof(*node))) == NULL)
         return NULL;
     node->value = value;
-    if (list->len == 0) {
+    if (list->len == 0) { /*  列表是空的情况 */
         list->head = list->tail = node;
         node->prev = node->next = NULL;
-    } else {
+    } else { /*  列表是非空的情况 */
         node->prev = NULL;
         node->next = list->head;
-        list->head->prev = node;
-        list->head = node;
+        list->head->prev = node;   /* 让原来的第一个结点的向前指针指向node */
+        list->head = node; 
     }
     list->len++;
     return list;
@@ -71,6 +74,10 @@ list *listAddNodeHead(list *list, void *value)
  * On error, NULL is returned and no operation is performed (i.e. the
  * list remains unaltered).
  * On success the 'list' pointer you pass to the function is returned. */
+
+ /*
+    在尾处添加一个结点。  
+ */
 list *listAddNodeTail(list *list, void *value)
 {
     listNode *node;
@@ -78,10 +85,10 @@ list *listAddNodeTail(list *list, void *value)
     if ((node = (listNode *)malloc(sizeof(*node))) == NULL)
         return NULL;
     node->value = value;
-    if (list->len == 0) {
+    if (list->len == 0) { /*  列表是空的情况 */
         list->head = list->tail = node;
         node->prev = node->next = NULL;
-    } else {
+    } else { /*  列表是非空的情况 */
         node->prev = list->tail;
         node->next = NULL;
         list->tail->next = node;
@@ -94,7 +101,6 @@ list *listAddNodeTail(list *list, void *value)
 /* 将一个包含给定值的节点添加到某个节点的之前或之后 
    after=1时是放在 old_node之后
 */
-
 list *listInsertNode(list *list, listNode *old_node, void *value, int after) {
     listNode *node;
 
@@ -259,7 +265,7 @@ listNode *listNext(listIter *iter)
  * The original list both on success or error is never modified. */
 
 /*
-   拷贝一个链表,复杂了一点，后看. 2016-06-26
+   拷贝一个链表,复杂了一点. 2016-06-26
 */
 
 list *listDup(list *orig)
@@ -276,7 +282,7 @@ list *listDup(list *orig)
     iter = listGetIterator(orig, AL_START_HEAD);
     while((node = listNext(iter)) != NULL) {
         void *value;
-
+        /* 有拷贝函数就一定在用拷贝函数 */
         if (copy->dup) {
             value = copy->dup(node->value);
             if (value == NULL) {
@@ -286,7 +292,7 @@ list *listDup(list *orig)
             }
         } else
             value = node->value;
-        if (listAddNodeTail(copy, value) == NULL) {
+        if (listAddNodeTail(copy, value) == NULL) { /* 添加到尾处 */
             listRelease(copy);
             listReleaseIterator(iter);
             return NULL;
@@ -305,6 +311,10 @@ list *listDup(list *orig)
  * On success the first matching node pointer is returned
  * (search starts from head). If no matching node exists
  * NULL is returned. */
+
+/*
+    在列表中搜索一个节点 key 
+ */
 listNode *listSearchKey(list *list, void *key)
 {
     listIter *iter;
@@ -333,11 +343,13 @@ listNode *listSearchKey(list *list, void *key)
  * and so on. Negative integers are used in order to count
  * from the tail, -1 is the last element, -2 the penultimate
  * and so on. If the index is out of range NULL is returned. */
+
+/* 按index 往前往后搜索 */
 listNode *listIndex(list *list, long index) {
     listNode *n;
 
     if (index < 0) {
-        index = (-index)-1;  /* 这是什么鬼? */
+        index = (-index) - 1;  /* 小于零从尾处开始 */
         n = list->tail;
         while(index-- && n) n = n->prev;
     } else {
@@ -347,13 +359,14 @@ listNode *listIndex(list *list, long index) {
     return n;
 }
 
-/* Rotate the list removing the tail node and inserting it to the head. */
+/* Rotate(旋转) the list removing the tail node and inserting it to the head. */
+/* 把最后一个节点放到第一个节点处 */
 void listRotate(list *list) {
     listNode *tail = list->tail;
 
     if (listLength(list) <= 1) return;
 
-    /* Detach current tail */
+    /* Detach(分离) current tail */
     list->tail = tail->prev;
     list->tail->next = NULL;
     /* Move it as head */
